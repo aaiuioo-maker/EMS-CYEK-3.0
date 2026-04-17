@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="EMS判定">
+<title>EMS / ゆうパック 搭載判定</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&display=swap');
+:root{
+  --bg:#0a0a1a;--panel:#1a1a3a;--bd:#4444aa;--bdl:#6666cc;
+  --gold:#ffcc00;--wh:#eeeeff;--blue:#4488ff;
+  --green:#44cc44;--red:#ff4444;--orange:#ffaa00;--gray:#888899;
+  --land:#44aaff;
+  --st:env(safe-area-inset-top,44px);--sb:env(safe-area-inset-bottom,20px);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--wh);min-height:100vh;min-height:-webkit-fill-available;overflow-x:hidden;}
+body::before{content:'';position:fixed;inset:0;background-image:radial-gradient(1px 1px at 15% 10%,rgba(255,255,255,.5) 0%,transparent 100%),radial-gradient(1px 1px at 60% 20%,rgba(255,255,255,.3) 0%,transparent 100%),radial-gradient(1px 1px at 85% 8%,rgba(255,255,255,.4) 0%,transparent 100%),radial-gradient(1px 1px at 40% 4%,rgba(255,255,255,.3) 0%,transparent 100%),radial-gradient(1px 1px at 90% 35%,rgba(255,255,255,.3) 0%,transparent 100%),radial-gradient(1px 1px at 8% 55%,rgba(255,255,255,.2) 0%,transparent 100%);pointer-events:none;z-index:0;}
+
+#op{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:100;cursor:pointer;}
+.op-logo{font-size:11px;font-weight:900;color:var(--gold);letter-spacing:.15em;margin-bottom:6px;opacity:0;animation:fu .8s ease .3s forwards;}
+.op-sprite{font-size:56px;margin:18px 0 12px;opacity:0;animation:fu .8s ease .5s forwards;}
+.op-title{font-size:19px;font-weight:900;color:var(--wh);text-align:center;line-height:1.5;opacity:0;animation:fu .8s ease .7s forwards;}
+.op-title span{color:var(--gold);}
+.op-sub{font-size:10px;color:var(--gray);margin-top:5px;letter-spacing:.08em;opacity:0;animation:fu .8s ease .9s forwards;}
+.op-press{font-size:13px;color:var(--gold);letter-spacing:.15em;margin-top:44px;opacity:0;animation:fu .5s ease 1.5s forwards,blink 1.2s ease 2s infinite;}
+
+#main{display:none;flex-direction:column;padding-top:calc(var(--st)+8px);padding-bottom:calc(var(--sb)+16px);padding-left:14px;padding-right:14px;position:relative;z-index:1;gap:10px;}
+
+.W{background:var(--panel);border:3px solid var(--bdl);border-radius:4px;box-shadow:inset 0 0 0 1px var(--bd),0 4px 20px rgba(0,0,80,.5);position:relative;}
+.W::before{content:'';position:absolute;inset:2px;border:1px solid rgba(100,100,200,.25);border-radius:2px;pointer-events:none;}
+
+.hdr{padding:10px 14px;}
+.hdr-logo{font-size:10px;color:var(--gold);letter-spacing:.15em;font-weight:700;margin-bottom:2px;}
+.hdr-title{font-size:15px;font-weight:900;color:var(--wh);}
+
+.legend{padding:8px 14px;display:flex;gap:8px;flex-wrap:wrap;}
+.leg{display:flex;align-items:center;gap:4px;font-size:10px;color:var(--gray);}
+.leg-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+.lg-ok{background:var(--green);}.lg-c{background:var(--orange);}.lg-l{background:var(--land);}.lg-ng{background:var(--red);}
+
+.sw{padding:12px 14px;}
+.sw-lbl{font-size:10px;color:var(--gold);letter-spacing:.15em;display:block;margin-bottom:7px;}
+.sw-row{display:flex;gap:7px;}
+.si{flex:1;background:#080818;border:2px solid var(--bd);border-radius:3px;color:var(--wh);font-family:'Noto Sans JP',sans-serif;font-size:15px;padding:9px 11px;outline:none;-webkit-appearance:none;}
+.si::placeholder{color:var(--gray);font-size:13px;}
+.si:focus{border-color:var(--gold);}
+.sb{background:linear-gradient(180deg,#5566ee 0%,#3344bb 100%);border:2px solid var(--bdl);border-radius:3px;color:var(--wh);font-family:'Noto Sans JP',sans-serif;font-size:13px;font-weight:700;padding:9px 13px;cursor:pointer;box-shadow:0 3px 0 #223399,inset 0 1px 0 rgba(255,255,255,.15);-webkit-appearance:none;white-space:nowrap;}
+.sb:active{transform:translateY(2px);box-shadow:0 1px 0 #223399;}
+
+.tw{padding:10px 14px;}
+.tw-lbl{font-size:10px;color:var(--gold);letter-spacing:.15em;display:block;margin-bottom:7px;}
+.tg{display:flex;flex-wrap:wrap;gap:5px;}
+.tb{background:#080818;border:1.5px solid var(--bd);border-radius:3px;color:var(--wh);font-family:'Noto Sans JP',sans-serif;font-size:11px;padding:5px 9px;cursor:pointer;-webkit-appearance:none;}
+.tb:active{background:var(--panel);border-color:var(--gold);color:var(--gold);}
+
+.em{padding:36px 14px;text-align:center;color:var(--gray);font-size:13px;line-height:2;}
+.ei{font-size:30px;display:block;margin-bottom:10px;}
+
+.rc{overflow:hidden;}
+.sh{padding:12px 14px;display:flex;align-items:center;gap:10px;}
+.sic{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:900;flex-shrink:0;border:2px solid;}
+.ok   .sic{background:rgba(68,204,68,.12); border-color:var(--green); color:var(--green);}
+.cond .sic{background:rgba(255,170,0,.12); border-color:var(--orange);color:var(--orange);}
+.land .sic{background:rgba(68,170,255,.12);border-color:var(--land);  color:var(--land);}
+.ng   .sic{background:rgba(255,68,68,.12); border-color:var(--red);   color:var(--red);}
+.sn{font-size:13px;font-weight:700;color:var(--wh);line-height:1.4;flex:1;}
+.badge{font-size:10px;padding:3px 8px;border-radius:2px;font-weight:700;border:1.5px solid;white-space:nowrap;flex-shrink:0;}
+.ok   .badge{color:var(--green); border-color:var(--green);}
+.cond .badge{color:var(--orange);border-color:var(--orange);}
+.land .badge{color:var(--land);  border-color:var(--land);}
+.ng   .badge{color:var(--red);   border-color:var(--red);}
+
+.rb{padding:0 14px 14px;}
+.smry{font-size:12px;color:#aaaacc;line-height:1.8;margin-bottom:12px;padding:9px 11px;background:rgba(0,0,0,.3);border-left:3px solid var(--bd);border-radius:0 3px 3px 0;}
+.stitle{font-size:10px;color:var(--gold);letter-spacing:.15em;font-weight:700;margin:12px 0 7px;}
+
+.verdict-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:2px;}
+.verdict-box{border-radius:3px;padding:9px 10px;text-align:center;}
+.verdict-box .vt{font-size:10px;font-weight:700;letter-spacing:.08em;margin-bottom:4px;}
+.verdict-box .vi{font-size:18px;font-weight:900;line-height:1;}
+.verdict-box .vl{font-size:10px;margin-top:3px;line-height:1.4;}
+.vair-ok {background:rgba(68,204,68,.1); border:1.5px solid rgba(68,204,68,.4);}  .vair-ok .vt,.vair-ok .vi{color:var(--green);}
+.vair-c  {background:rgba(255,170,0,.1); border:1.5px solid rgba(255,170,0,.4);}  .vair-c  .vt,.vair-c  .vi{color:var(--orange);}
+.vair-ng {background:rgba(255,68,68,.1); border:1.5px solid rgba(255,68,68,.4);}  .vair-ng .vt,.vair-ng .vi{color:var(--red);}
+.vland-ok{background:rgba(68,170,255,.1);border:1.5px solid rgba(68,170,255,.4);} .vland-ok .vt,.vland-ok .vi{color:var(--land);}
+.vland-c {background:rgba(255,170,0,.1); border:1.5px solid rgba(255,170,0,.4);}  .vland-c  .vt{color:var(--orange);}
+.vland-ng{background:rgba(255,68,68,.1); border:1.5px solid rgba(255,68,68,.4);}  .vland-ng .vt,.vland-ng .vi{color:var(--red);}
+.vland-na{background:rgba(136,136,153,.08);border:1.5px solid rgba(136,136,153,.25);} .vland-na .vt,.vland-na .vi{color:var(--gray);}
+
+.land-note{background:rgba(68,170,255,.08);border:1.5px solid rgba(68,170,255,.3);border-radius:3px;padding:9px 11px;font-size:12px;color:#88ccff;line-height:1.7;margin-bottom:4px;}
+.cl{list-style:none;}
+.cl li{font-size:12px;color:#aaaacc;padding:5px 0;border-bottom:1px solid rgba(68,68,170,.2);display:flex;gap:7px;align-items:flex-start;line-height:1.6;}
+.cl li:last-child{border-bottom:none;}
+.ci{flex-shrink:0;font-size:11px;margin-top:2px;}
+.safe-box{background:rgba(68,204,68,.08);border:1.5px solid rgba(68,204,68,.3);border-radius:3px;padding:9px 11px;font-size:12px;color:#88ee88;line-height:1.7;}
+.ng-box  {background:rgba(255,68,68,.08); border:1.5px solid rgba(255,68,68,.3); border-radius:3px;padding:9px 11px;font-size:12px;color:#ff8888;line-height:1.7;}
+.dl{display:flex;flex-direction:column;gap:7px;}
+.di{background:rgba(0,0,0,.4);border:1.5px solid rgba(68,68,170,.35);border-radius:3px;padding:9px 11px;}
+.dtag{font-size:10px;color:var(--gold);margin-bottom:5px;display:flex;align-items:center;justify-content:space-between;gap:6px;flex-wrap:wrap;}
+.dlabel{flex:1;min-width:0;}
+.cpb{background:transparent;border:1px solid var(--bd);border-radius:2px;color:var(--gray);font-family:'Noto Sans JP',sans-serif;font-size:10px;padding:2px 7px;cursor:pointer;-webkit-appearance:none;white-space:nowrap;flex-shrink:0;}
+.cpb:active,.cpb.copied{border-color:var(--green);color:var(--green);}
+.den{font-size:12px;color:var(--blue);line-height:1.7;font-weight:700;margin-bottom:4px;word-break:break-all;}
+.den.hl{color:var(--gold);font-size:13px;}
+.dja{font-size:11px;color:var(--gray);line-height:1.6;}
+.dpv{font-size:10px;color:#aaaaee;margin-top:4px;padding:4px 7px;background:rgba(68,68,170,.15);border-radius:2px;line-height:1.5;}
+.official-btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;margin-top:14px;padding:12px 14px;background:linear-gradient(180deg,#223388 0%,#111a55 100%);border:2px solid var(--bdl);border-radius:3px;color:var(--gold);font-family:'Noto Sans JP',sans-serif;font-size:13px;font-weight:700;cursor:pointer;text-decoration:none;box-shadow:0 3px 0 #0a0f33,inset 0 1px 0 rgba(255,255,255,.1);}
+.official-btn:active{transform:translateY(2px);box-shadow:0 1px 0 #0a0f33;}
+.official-note{font-size:10px;color:var(--gray);text-align:center;margin-top:6px;line-height:1.6;}
+
+@keyframes fu{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+@keyframes si{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+.slide-in{animation:si .25s ease forwards;}
+</style>
+</head>
+<body>
+<div id="op" onclick="startApp()">
+  <div class="op-logo">JAPAN POST 公式一覧表（2025年2月版）準拠</div>
+  <div class="op-sprite">✉️</div>
+  <div class="op-title"><span>EMS</span> 航空搭載 ／<br>ゆうパック 陸送 判定</div>
+  <div class="op-sub">航空危険物品一覧表 全34ページ準拠</div>
+  <div class="op-press">▼ タップしてスタート ▼</div>
+</div>
+
+<div id="main">
+  <div class="hdr W">
+    <div class="hdr-logo">✉ JAPAN POST 公式一覧表（2025年2月）準拠</div>
+    <div class="hdr-title">航空搭載 ／ ゆうパック陸送 判定</div>
+  </div>
+  <div class="legend W">
+    <div class="leg"><div class="leg-dot lg-ok"></div>搭載可</div>
+    <div class="leg"><div class="leg-dot lg-c"></div>条件付き可</div>
+    <div class="leg"><div class="leg-dot lg-l"></div>陸送のみ可</div>
+    <div class="leg"><div class="leg-dot lg-ng"></div>引受不可</div>
+  </div>
+  <div class="sw W">
+    <span class="sw-lbl">▶ 品名を入力してください</span>
+    <div class="sw-row">
+      <input class="si" type="text" id="query" placeholder="例：香水、リチウム電池、ランタン…" />
+      <button class="sb" onclick="doSearch()">調べる</button>
+    </div>
+  </div>
+  <div class="tw W">
+    <span class="tw-lbl">▶ よく調べる品目</span>
+    <div class="tg" id="tg"></div>
+  </div>
+  <div id="ra">
+    <div class="W em"><span class="ei">🔍</span>品名を入力するか<br>上のボタンをタップして<br>搭載可否を確認できます</div>
+  </div>
+</div>
+
+<script>
+const DB=[
+// ===== あ行 =====
+{k:['アイシャドウ','アイライナー','アイメイク','つけまつげ','アイプチ','二重のり','eye make up'],
+ n:'アイメイク（アイシャドウ・アイライナー・つけまつげ等）',air:'ok',land:'ok',lb:'航空搭載可 / 陸送可',
+ sm:'公式一覧表では「アイメイク・アイシャドー・アイライナー・つけまつげ・アイプチ・二重のり」として航空搭載可と明記。',
+ landNote:'ゆうパック陸送でも引受可能。',
+ c:[{o:1,t:'アイシャドウ・アイライナー等：航空・陸送とも可'},{o:0,t:'スプレータイプ：エアゾール規制に従う'}],
+ sf:'一般的なアイメイク製品は航空・陸送とも可',
+ d:[{l:'アイメイク',en:'Eye make-up (eyeshadow, eyeliner, mascara). No hazardous materials. nonalcoholic.',ja:'アイメイク（アイシャドウ・アイライナー・マスカラ）。危険物なし。ノンアルコール。',hl:false,pv:''}]},
+
+{k:['アイロン','コードレスアイロン','iron'],
+ n:'アイロン（コードレス含む）',air:'cond',land:'ok',lb:'航空：電池次第 / 陸送可',
+ sm:'公式一覧表では「アイロン（コードレス）」として記載。リチウム電池内蔵のためUN3481として規制対象。100Wh以下なら航空可。',
+ landNote:'ゆうパック陸送では引受可能。',
+ c:[{o:1,t:'リチウム電池内蔵100Wh以下：航空可'},{o:1,t:'ゆうパック陸送：引受可'},{o:0,t:'電池なしの場合は品名欄に「without lithium battery」と記載'}],
+ sf:'内蔵電池100Wh以下・損傷なしの場合',
+ d:[{l:'コードレスアイロン（電池なし申告）',en:'Cordless iron. without lithium battery',ja:'コードレスアイロン。電池なし。',hl:true,pv:'電池を除く場合は「without lithium battery」と記載'},{l:'コードレスアイロン（電池組込）',en:'Cordless iron with lithium-ion battery (UN3481), less than 100Wh. No damage.',ja:'コードレスアイロン（UN3481・100Wh未満）。損傷なし。',hl:false,pv:''}]},
+
+{k:['アクセサリー','ジュエリー','指輪','ネックレス','ブレスレット','イヤリング','ピアス','装飾品'],
+ n:'アクセサリー・ジュエリー類',air:'ok',land:'ok',lb:'航空搭載可 / 陸送可',
+ sm:'公式一覧表では「アクセサリー」として航空搭載可と明記。ただし内蔵リチウム電池のサイズによりHID参照の場合あり（2024.6.28更新）。',
+ landNote:'ゆうパック陸送でも引受可能。',
+ c:[{o:1,t:'指輪・ネックレス・ブレスレット等：航空・陸送とも可'},{o:0,t:'スマートアクセサリー（電池内蔵）：電池容量確認要'}],
+ sf:'一般的なアクセサリー・ジュエリーは航空・陸送とも可',
+ d:[{l:'アクセサリー',en:'Jewelry / accessories (ring, necklace, bracelet). No battery, no liquid, no hazardous materials.',ja:'アクセサリー・ジュエリー。電池なし・液体なし・危険物なし。',hl:false,pv:''}]},
+
+{k:['アルカリ蓄電池','産業用電池','alkaline storage battery'],
+ n:'アルカリ蓄電池（産業用）',air:'cond',land:'ok',lb:'航空：条件付き可 / 陸送可',
+ sm:'公式一覧表では「アルカリ蓄電池（産業用）」として記載。SDS等による確認（ショート防止）を行うことを確認のうえ航空可。',
+ landNote:'ゆうパック陸送では引受可能。',
+ c:[{o:1,t:'SDS等による確認（ショート防止）を行うことを確認：航空可'},{o:1,t:'ゆうパック陸送：引受可'},{o:0,t:'液漏れ・損傷がある場合は不可'}],
+ sf:'ショート防止確認済みの場合',
+ d:[{l:'アルカリ蓄電池（産業用）',en:'Alkaline storage battery (industrial). No damage, no leakage. Short-circuit protected.',ja:'アルカリ蓄電池（産業用）。損傷なし・液漏れなし。ショート防止処置済み。',hl:false,pv:''}]},
+
+{k:['アロマオイル','エッセンシャルオイル','アロマキャンドル','アロマ'],
+ n:'アロマオイル・エッセンシャルオイル・アロマキャンドル',air:'cond',land:'ok',lb:'航空：引火点次第 / 陸送可',
+ sm:'公式一覧表では「アロマオイル・アロマキャンドル」として記載。SDS等により引火点60℃を超えることを確認して航空可。キャンドルは固体で航空不要。',
+ landNote:'ゆうパック陸送では引受可能。',
+ c:[{o:1,t:'アロマキャンドル（固体）：航空・陸送とも可'},{o:1,t:'アロマオイル（引火点60℃以上）：航空可'},{o:0,t:'引火点が60℃以下のエッセンシャルオイル：要確認'},{o:1,t:'ゆうパック陸送：引受可'}],
+ sf:'アロマキャンドル（固体）・引火点60℃以上のオイルの場合',
+ d:[{l:'アロマオイル（引火点60℃以上）',en:'Aroma oil (flash point above 60°C). Not flammable liquid. SDS confirmed.',ja:'アロマオイル（引火点60℃以上）。可燃性液体非該当。SDS確認済み。',hl:false,pv:''},{l:'アロマキャンドル',en:'Aroma candle (solid). No flammable liquid. No hazardous materials.',ja:'アロマキャンドル（固体）。可燃性液体なし。危険物なし。',hl:false,pv:''},{l:'オイルなし申告',en:'No aroma oil. No essential oil. No flammable liquid.',ja:'アロマオイルなし。エッセンシャルオイルなし。可燃性液体なし。',hl:false,pv:''}]},
+
+{k:['アンプ','スピーカー','スマートスピーカー','音響機器','オーディオ'],
+ n:'アンプ・スピーカー・スマートスピーカー',air:'cond',land:'ok',lb:'航空：電池次第 / 陸送可',
+ sm:'公式一覧表では「アンプ（音響装置）」「スピーカー・スマートスピーカー」として記載。磁性物質を有するため磁場基準0.00525ガウス以下を確認。コンパス方位まで0.418m以上で。',
+ landNote:'ゆうパック陸送では引受可能。',
+ c:[{o:1,t:'一般的なスピーカー：磁場基準確認で航空可'},{o:1,t:'リチウム電池内蔵100Wh以下：航空可'},{o:1,t:'ゆうパック陸送：引受可'},{o:0,t:'損傷・膨張がある電池：不可'}],
+ sf:'磁場基準確認済み・電池なしまたは100Wh以下の場合',
+ d:[{l:'スピーカー（電池なし）',en:'Speaker. without lithium battery. No hazardous materials.',ja:'スピーカー。電池なし。危険物なし。',hl:true,pv:'電池を除く場合は「without lithium battery」と記載'},{l:'スマートスピーカー（電池組込）',en:'Smart speaker with lithium-ion battery (UN3481), less than 20Wh. No damage.',ja:'スマートスピーカー（UN3481・20Wh未満）。損傷なし。',hl:false,pv:''}]},
+
+// ===== い行 =====
+{k:['衣類','服','洋服','tシャツ','ジャケット','ズボン','靴下','下着','衣料'],
+ n:'衣類・洋服・繊維製品',air:'ok',land:'ok',lb:'航空搭載可 / 陸送可',
+ sm:'公式一覧表では「衣類・衣料品」として航空搭載可と明記。ファン付き作業服等は電池確認要。',
+ landNote:'ゆうパック陸送でも引受可能。',
+ c:[{o:1,t:'Tシャツ・ジャケット・ズボン等：航空・陸送とも可'},{o:0,t:'ファン付き作業服（電動ファン・リチウム電池）：電池容量確認要'}],
+ sf:'一般的な衣類は航空・陸送とも可',
+ d:[{l:'衣類',en:'Clothing (T-shirts, jackets, pants, etc.). No hazardous materials. No battery, no liquid.',ja:'衣類（Tシャツ・ジャケット・ズボン等）。危険物なし。電池なし・液体なし。',hl:false,pv:''}]},
+
+{k:['イヤホン','ヘッドフォン','ヘッドホン','ワイヤレスイヤホン','airpods','トラベルイヤホン'],
+ n:'イヤホン・ヘッドフォン（ワイヤレス含む）',air:'ok',land:'ok',lb:'航空搭載可 / 陸送可',
+ sm:'公式一覧表では「イヤホン・ヘッドホン（ワイヤレス・コードレスタイプ）・トラベルイヤホン」として航空搭載可と明記（2024.6.3更新）。',
+ landNote:'ゆうパック陸送でも引受可能。',
+ c:[{o:1,t:'有線・ワイヤレスイヤホン・ヘッドフォン：航空・陸送とも可'},{o:0,t:'損傷・液漏れのある電池内蔵品は要注意'}],
+ sf:'通常のイヤホン・ヘッドフォンは航空・陸送とも可',
+ d:[{l:'ワイヤレスイヤホン',en:'Wireless earphones with lithium-ion battery (UN3481), less than 1Wh. No damage.',ja:'ワイヤレスイヤホン（UN3481・1Wh未満）。損傷なし。',hl:false,pv:''},{l:'有線イヤホン',en:'Wired earphone / headphone. No battery. No hazardous materials.',ja:'有線イヤホン・ヘッドフォン。電池なし。危険物なし。',hl:false,pv:''}]},
+
+{k:['入れ歯','義歯','入れ歯洗浄剤','義歯洗浄','入れ歯安定剤','歯科技工','デンタル'],
+ n:'入れ歯（義歯）洗浄剤・安定剤・歯科技工物',air:'cond',land:'ok',lb:'航空：種類次第 / 陸送可',
+ sm:'公式一覧表では「入れ歯（義歯）洗浄剤・安定剤」は航空可、「歯科技工物・歯科技工品」はSDS等による引火性確認後航空可と記載。',
+ landNote:'ゆうパック陸送では引受可能。',
+ c:[{o:1,t:'入れ歯洗浄剤（錠剤・粉末）：航空・陸送とも可'},{o:1,t:'入れ歯安定剤（歯科技工品SDS検識済）：航空可'},{o:0,t:'引火性液体を含む歯科用材料：要確認'}],
+ sf:'一般的な入れ歯洗浄剤・安定剤は航空・陸送とも可',
+ d:[{l:'入れ歯洗浄剤',en:'Denture cleaner (tablet/powder). No flammable liquid. No hazardous materials.',ja:'入れ歯洗浄剤（錠剤・粉末）。可燃性液体なし。危険物なし。',hl:false,pv:''},{l:'歯科技工物',en:'Dental prosthetics. SDS confirmed, non-flammable.',ja:'歯科技工物。SDS確認済み、不燃性。',hl:false,pv:'入れ歯安定剤（SDS検識済）'}]},
+
+{k:['インクカートリッジ','プリンタインク','インクリボン'],
+ n:'インクカートリッジ・プリンターインク',air:'cond',land:'ok',lb:'航空：条件付き可 / 陸送可',
+ sm:'公式一覧表では「インクカートリッジ・インクリボン・プリンタインク」として記載。SDS等により引火性がないことを確認して航空可。大口については確認要。',
+ landNote:'ゆうパック陸送では引受可能。',
+ c:[{o:1,t:'一般的なインクカートリッジ：引火性確認で航空可'},{o:1,t:'ゆうパック陸送：引受可'},{o:0,t:'可燃性溶剤含有の大容量インク：要確認'}],
+ sf:'引火性なし・一般的なインクカートリッジの場合',
+ d:[{l:'インクカートリッジ',en:'Ink cartridge (printer). Non-flammable. SDS confirmed. No hazardous materials.',ja:'インクカートリッジ（プリンター用）。不燃性。SDS確認済み。危険物なし。',hl:false,pv:''},{l:'インクなし申告',en:'No ink cartridge. No flammable liquid.',ja:'インクカートリッジなし。可燃性液体なし。',hl:false,pv:''}]},
+
+// ===== う行 =====
+{k:['ウェットティッシュ','おしりふき','ウェットタオル','baby wipes','wet wipes'],
+ n:'ウェットティッシュ・ウェットタオル',air:'ok',land:'ok',lb:'航空搭載可 / 陸送可',
+ sm:'公式一覧表では「ウェットティッシュ・タオル」として航空搭載可と明記。ただしアルコールを含む場合は濃度確認要（アルコール度数が高い場合は可燃性液体）。',
+ landNote:'ゆうパック陸送でも引受可能。',
+ c:[{o:1,t:'一般的なウェットティッシュ：航空・陸送とも可'},{o:0,t:'高アルコール含有（度数高い）：要確認'}],
+ sf:'一般的なウェットティッシュは航空・陸送とも可',
+ d:[{l:'ウェットティッシュ（ノンアルコール）',en:'Wet wipes. nonalcoholic. No hazardous materials.',ja:'ウェットティッシュ。ノンアルコール。危険物なし。',hl:false,pv:''},{l:'除菌ウェットティッシュ（アルコール度数低）',en:'Disinfectant wet wipes, alcohol content below 24%. Not Restricted, as per Special Provision A 58.',ja:'除菌ウェットティッシュ（アルコール度数24%以下）。特別規定A58により規制対象外。',hl:true,pv:'アルコール度数24%以下のみ適用'}]},
+
+{k:['腕時計','時計','スマートウォッチ','ウォッチ','置き時計','掛け時計'],
+ n:'腕時計・時計・スマートウォッチ',air:'ok',land:'ok',lb:'航空搭載可 / 陸送可',
+ sm:'公式一覧表では「腕時計・スマートウォッチ」として航空搭載可と明記。内蔵電池は規制対象容量未満。ボタン電池はリチウム電池マークを確認。',
+ landNote:'ゆうパック陸送でも引受可能。',
+ c:[{o:1,t:'アナログ・クォーツ・機械式時計：航空・陸送とも可'},{o:1,t:'スマートウォッチ（内蔵電池1Wh以下）：可'},{o:0,t:'損傷・液漏れのある電池の場合は交換が必要'}],
+ sf:'通常の時計・スマートウォッチは航空・陸送とも可',
+ d:[{l:'腕時計',en:'Wristwatch. Button battery is below hazardous threshold. No hazardous materials.',ja:'腕時計。ボタン電池は規制対象容量未満。危険物なし。',hl:false,pv:''},{l:'スマートウォッチ',en:'Smartwatch with lithium-ion battery (UN3481), less than 1Wh. No damage.',ja:'スマートウォッチ（UN3481・1Wh未満）。損傷なし。',hl:false,pv:''}]},
+
+// ===== え行 =====
+{k:['エアガン','エアソフトガン','サバゲー'],
+ n:'エアガン・エアソフトガン',air:'cond',land:'ok',lb:'航空：条件付き可 / 陸送可',
+ sm:'公式一覧表では「エアガン・エアソフトガン」として記載。高圧ガスを使用しているかどうかを確認。電池の有無も確認。「エアガン（ガスGL）」等を品名欄に記載。',
+ landNote:'ゆうパック陸送では引受可能。',
+ c:[{o:1,t:'電動エアガン（バッテリー・高圧ガスなし）：航空可'},{o:0,t:'ガス式エアガン（高圧ガス使用）：高圧ガスのため航空不可'},{o:1,t:'ゆうパック陸送：引受可'}],
+ sf:'電動式（高圧ガスなし）の場合',
+ d:[{l:'電動エアガン（ガスなし）',en:'Electric air soft gun. No compressed gas. No flammable gas. (without lithium battery)',ja:'電動エアソフトガン。高圧ガスなし。可燃性ガスなし。（電池なし）',hl:true,pv:'「エアガン（ガスGL）」を品名欄に記載。電池なしなら「without lithium battery」も追記'},{l:'ガスなし申告',en:'Air soft gun. No gas cylinder. No compressed gas. (Gas-free)',ja:'エアソフトガン。ガスシリンダーなし。高圧ガスなし。',hl:false,pv:''}]},
+
+{k:['エタノール','ethanol'],
+ n:'エタノール',air:'cond',land:'ok',lb:'航空：度数次第 / 陸送可',
+ sm:'公式一覧表では「エタノール」として記載。アルコール度数24%以下なら「Not Restricted, as per Special Provision A 58」と記載して航空可。',
+ landNote:'ゆうパック陸送では引受可能。',
+ c:[{o:1,t:'度数24%以下：「Not Restricted, as per Special Provision A 58」と記載して航空可'},{o:0,t:'度数24%超70%未満：危険物として取扱い要'},{o:0,t:'度数70%超：原則航空不可'}],
+ sf:'度数24%以下の場合',
+ d:[{l:'エタノール（度数24%以下）',en:'Not Restricted, as per Special Provision A 58',ja:'特別規定A58により規制対象外（度数24%以下）',hl:true,pv:'度数24%以下のみ適用'},{l:'エタノールなし申告',en:'Contains no ethanol. nonalcoholic.',ja:'エタノールなし。ノンアルコール。',hl:false,pv:''}]},
+
+{k:['エンジン','エンジンオイル','motor oil'],
+ n:'エンジン・エンジンオイル',air:'cond',land:'cond',lb:'航空：条件付き / 陸送：要確認',
+ sm:'公式一覧表では「エンジン」はガソリン・可燃性液体が含まれるため航空不可の場合多。「エンジンオイル」は第3・4石油類で引火点によって異なる。',
+ landNote:'ゆうパック陸送でもエンジンオイルは引受可能な場合あり（要確認）。',
+ c:[{o:0,t:'ガソリン式エンジン（燃料入り）：航空不可'},{o:1,t:'電気式エンジン・モーター（燃料なし）：航空可'},{o:1,t:'エンジンオイル（SDS確認・引火点60℃超）：航空可の場合あり'},{o:0,t:'引火点60℃以下のエンジンオイル：航空不可'}],
+ sf:'燃料なし・電気式またはエンジンオイル（引火点60℃超）の場合',
+ d:[{l:'エンジンオイル（SDS確認）',en:'Engine oil (motor oil). SDS confirmed, flash point above 60°C. Non-flammable at standard conditions.',ja:'エンジンオイル。SDS確認済み、引火点60℃超。標準条件で不燃性。',hl:false,pv:''},{l:'エンジンオイルなし申告',en:'No engine oil. No flammable liquid.',ja:'エンジンオイルなし。可燃性液体なし。',hl:false,pv:''}]},
+
+// ===== お行 =====
+{k:['お灸','灸','moxibustion'],
+ n:'お灸',air:'ok',land:'ok',lb:'航空搭載可 / 陸送可',
+ sm:'公式一覧表では「お灸」として航空搭載可と明記。',
+ landNote:'ゆうパック陸送でも引受可能。',
+ c:[{o:1,t:'お灸（一般的なもの）：航空・陸送とも可'}],
+ sf:'一般的なお灸は航空・陸送とも可',
+ d:[{l:'お灸',en:'Moxibustion. No hazardous materials.',ja:'お灸。危険物なし。',hl:false,pv:''}]},
+
+{k:['おもちゃ','玩具','フィギュア','ぬいぐるみ','人形','プラモデル','カプセルトイ','ミニカー','キーホルダー'],
+ n:'おもちゃ・フィギュア・ぬいぐるみ',air:'ok',land:'ok',lb:'航空搭載可 / 陸送可',
+ sm:'公式一覧表では「おもちゃ（玩具）・カプセルトイ・フィギュア」として航空搭載可と明記。電池内蔵のものは電池種類確認。',
+ landNote:'ゆうパック陸送でも引受可能。',
+ c:[{o:1,t:'ぬいぐるみ・人形・フィギュア：航空・陸送とも可'},{o:1,t:'乾電池式のおもちゃ：電池含めて可'},{o:1,t:'リチウム電池内蔵：100Wh以下なら可'}],
+ sf:'電池なし・または乾電池使用のおもちゃは航空・陸送とも可',
+ d:[{l:'ぬいぐるみ・フィギュア',en:'Stuffed animal / figurine / toy. No battery, no liquid, no hazardous materials.',ja:'ぬいぐるみ・フィギュア・おもちゃ。電池なし・液体なし・危険物なし。',hl:false,pv:''},{l:'電池なし申告',en:'Toy. No battery',ja:'おもちゃ。電池なし。',hl:true,pv:'電池を外す場合は「No battery」を明記'}]},
+
+// ===== か行 =====
+{k:['カイロ','使い捨てカイロ','懐炉','電熱式カイロ'],
+ n:'カイロ（使い捨て・電熱式）',air:'cond',land:'ok',lb:'航空：種類次第 / 陸送可',
+ sm:'公式一覧表では「カイロ（使い捨て・電熱式・エコ）」として記載。使い捨て（酸化鉄式）は航空可。白金触媒式・オイル式（ベンジン）は航空不可。',
+ landNote:'ゆうパック陸送では引受可能。',
+ c:[{o:1,t:'使い捨てカイロ（酸化鉄式）：航空・陸送とも可'},{o:0,t:'白金触媒式カイロ（ベンジン使用）：航空不可'},{o:0,t:'オイル式カイロ（ベンジン充填済み）：航空不可'},{o:1,t:'電熱式・充電式（100Wh以下）：航空可'}],
+ sf:'使い捨てカイロ（酸化鉄式）・電熱式（100Wh以下）の場合',
+ d:[{l:'使い捨てカイロ',en:'Disposable hand warmer (iron-based). No flammable liquid. No hazardous materials.',ja:'使い捨てカイロ（酸化鉄式）。可燃性液体なし。危険物なし。',hl:false,pv:''},{l:'カイロなし申告',en:'No hand warmer. No flammable liquid or gas.',ja:'カイロなし。可燃性液体・ガスなし。',hl:false,pv:''}]},
+
+{k:['カメラ','デジカメ','一眼','ミラーレス','デジタルカメラ','ビデオカメラ','アクションカメラ','gopro'],
+ n:'カメラ・デジタルカメラ・アクションカメラ',air:'cond',land:'ok',lb:'航空：電池次第 / 陸送可',
+ sm:'公式一覧表では「カメラ・アクションカメラ」として記載。リチウム電池内蔵のためUN3481として規制対象。100Wh以下なら航空可。カメラレンズGL含む（2025.3.26更新）。',
+ landNote:'ゆうパック陸送では引受可能。',
+ c:[{o:1,t:'内蔵リチウム電池100Wh以下：航空可'},{o:1,t:'ゆうパック陸送：引受可'},{o:0,t:'損傷・液漏れのあるバッテリーは不可'}],
+ sf:'内蔵電池100Wh以下・損傷なしの場合',
+ d:[{l:'カメラ（電池組込）',en:'Digital camera with lithium-ion battery (UN3481), less than 100Wh. No damage.',ja:'デジタルカメラ（UN3481・100Wh未満）。損傷なし。',hl:false,pv:''},{l:'電池なし・本体のみ',en:'Camera body only. No battery',ja:'カメラ本体のみ。電池なし。',hl:true,pv:'電池を外す場合は「No battery」を品名欄に明記'}]},
+
+{k:['乾電池','アルカリ電池','マンガン電池','単3','単4','単1','単2','dry battery'],
+ n:'乾電池（アルカリ・マンガン）',air:'ok',land:'ok',lb:'航空搭載可 / 陸送可',
+ sm:'公式一覧表では「乾電池（アルカリ・マンガン）」として航空搭載可と明記。英語表記：Dry battery / Alkaline cell / Manganese cell/battery。',
+ landNote:'ゆうパック陸送でも引受可能。',
+ c:[{o:1,t:'アルカリ・マンガン乾電池：航空・陸送とも可'},{o:0,t:'破損・液漏れがある場合は不可'}],
+ sf:'破損・液漏れがなければ航空・陸送とも可',
+ d:[{l:'乾電池',en:'Dry battery (alkaline / manganese). Non-lithium. No hazardous materials.',ja:'乾電池（アルカリ・マンガン）。非リチウム。危険物なし。',hl:false,pv:''},{l:'電池なし申告',en:'No battery',ja:'電池なし',hl:true,pv:'電池を外して送る場合は「No battery」を明記'}]},
+
+{k:['ガスコンロ','カセットコンロ','ガスバーナー','ガスレンジ','ガス炊飯器'],
+ n:'ガスコンロ・カセットコンロ・ガスバーナー',air:'cond',land:'ok',lb:'航空：ガスなし条件 / 陸送可',
+ sm:'公式一覧表では「カセットコンロ・ガスバーナー」として記載。品名欄に「カセットコンロ（ボンベGL）」「ガスパーナー（ボンベGL）」と記載が必要。',
+ landNote:'ゆうパック陸送では未使用品引受可能。',
+ c:[{o:1,t:'未使用品・ガスなし：品名欄にGL表記で航空可'},{o:0,t:'ガス缶・ボンベ込みは航空不可'},{o:1,t:'ゆうパック陸送：未使用品引受可'}],
+ sf:'未使用（ガスなし）の場合',
+ d:[{l:'カセットコンロ（ガスなし）',en:'Cassette stove (unused). No gas canister. No flammable gas. Cassette stove (Gas-free)',ja:'カセットコンロ（未使用）。ガス缶なし。可燃性ガスなし。',hl:true,pv:'品名欄に「カセットコンロ（ボンベGL）」「ガスパーナー（ボンベGL）」と記載'}]},
+
+{k:['ガス缶','カセットガス','カートリッジ','ガスボンベ'],
+ n:'ガス缶・カセットボンベ',air:'ng',land:'ng',lb:'航空不可 / 陸送も不可',
+ sm:'公式一覧表にて「可燃性ガスが含まれているため」として航空搭載不可。ゆうパック陸送も引受不可。',
+ landNote:'ゆうパック陸送でも引受不可です。',
+ c:[{o:0,t:'カセットガス缶（ブタン・プロパン）：航空・陸送とも不可'},{o:0,t:'使用済み・空の缶でも残留ガスがあるため不可'}],
+ sf:null,
+ d:[{l:'ガス缶なし申告',en:'No gas canister. No fuel. No flammable gas. No pressurized container.',ja:'ガス缶なし。燃料なし。可燃性ガスなし。加圧容器なし。',hl:false,pv:''}]},
+
+{k:['ガスライター','オイルライター','ライター','マッチ'],
+ n:'ガスライター・オイルライター・マッチ',air:'ng',land:'ng',lb:'航空不可 / 陸送も不可',
+ sm:'公式一覧表にて航空搭載不可・ゆうパック陸送も引受不可。',
+ landNote:'ゆうパック陸送でも引受不可です。',
+ c:[{o:0,t:'ガスライター・オイルライター：航空・陸送とも不可'},{o:0,t:'マッチ：航空・陸送とも不可'},{o:0,t:'使用済みも残留ガスがあるため不可'}],
+ sf:null,
+ d:[{l:'ライターなし申告',en:'Contains no lighter. No matches. No flammable items.',ja:'ライターなし。マッチなし。可燃性品なし。',hl:false,pv:''}]},
+
+{k:['ガソリン','ガソリンタンク','燃料缶','ガソリン携行缶'],
+ n:'ガソリン・ガソリンタンク',air:'ng',land:'ng',lb:'航空不可 / 陸送も不可',
+ sm:'公式一覧表にて「可燃性液体が含まれているため」として航空搭載不可・ゆうパック陸送も引受不可。',
+ landNote:'ゆうパック陸送でも引受不可です。',
+ c:[{o:0,t:'ガソリン・携行缶：航空・陸送とも不可'}],
+ sf:null,
+ d:[{l:'燃料なし申告',en:'No gasoline. No fuel. No flammable liquid.',ja:'ガソリンなし。燃料なし。可燃性液体なし。',hl:false,pv:''}]},
+
+{k:['化粧品','クリーム','ファンデーション','口紅','リップ','アイシャドウ','マスカラ','コンシーラー','メイク','フェイスパック','美容液','ハンドクリーム','ボディクリーム','ボディローション'],
+ n:'化粧品・スキンケア（一般）',air:'ok',land:'ok',lb:'航空搭載可 / 陸送可',
+ sm:'公式一覧表では化粧品・メイク道具は航空搭載可（可燃性液体・高圧ガスなしの条件）。「nonalcoholic」を品名欄に明記すると通関スムーズ。',
+ landNote:'ゆうパック陸送でも引受可能。',
+ c:[{o:1,t:'クリーム・ファンデーション・口紅等：航空・陸送とも可'},{o:0,t:'アルコール高含有の化粧水：要確認'},{o:0,t:'スプレータイプ：エアゾール規制に従う'}],
+ sf:'アルコールなし・非引火性の一般的な化粧品は航空・陸送とも可',
+ d:[{l:'化粧品（アルコールなし）',en:'Cosmetics, nonalcoholic, no hazardous materials.',ja:'化粧品、ノンアルコール、危険物なし',hl:true,pv:'「nonalcoholic」を品名欄に明記'},{l:'化粧品なし申告',en:'Contains no cosmetics. No liquid. nonalcoholic.',ja:'化粧品なし。液体なし。ノンアルコール。',hl:false,pv:''}]},
+
+{k:['化粧水','乳液','ローション','日焼け止め','サンスクリーン'],
+ n:'化粧水・乳液・ローション・日焼け止め',air:'cond',land:'ok',lb:'航空：引火点次第 / 陸送可',
+ sm:'公式一覧表では「引火点60℃以下→Not Restricted」と明記。化粧水・乳液・ローション・日焼け止めクリームは引火点確認後、「Not Restricted」と記載。',
+ landNote:'ゆうパック陸送では引受可能。',
+ c:[{o:1,t:'引火点60℃以下：「Not Restricted」と記載して航空可'},{o:1,t:'水性・非引火性：航空可'},{o:1,t:'ゆうパック陸送：引受可'}],
+ sf:'引火点60℃以下　陸送：引受可',
+ d:[{l:'化粧水・乳液・日焼け止め（引火点60℃以下）',en:'Not Restricted',ja:'「Not Restricted」と品名欄に記載',hl:true,pv:'引火点60℃以下の化粧水・乳液・ローション・日焼け止めに適用'},{l:'化粧水（水性）',en:'Skin lotion / Milky lotion, non-flammable, nonalcoholic.',ja:'化粧水・乳液、不燃性、ノンアルコール',hl:false,pv:''}]},
+
+{k:['カーナビ','カーオーディオ','自動車用品','カーワックス'],
+ n:'カーナビ・カーオーディオ・カーワックス',air:'cond',land:'ok',lb:'航空：電池・液体次第 / 陸送可',
+ sm:'公式一覧表では「カーナビ」「カーオーディオ」はリチウム電池内蔵のため規制対象。「カーワックス（液体含む）」はSDS確認要。',
+ landNote:'ゆうパック陸送では引受可能。',
+ c:[{o:1,t:'カーナビ・カーオーディオ（電池100Wh以下）：航空可'},{o:1,t:'カーワックス（引火点60℃以上・SDS確認）：航空可'},{o:1,t:'ゆうパック陸送：引受可'}],
+ sf:'電池100Wh以下・カーワックスはSDS確認済みの場合',
+ d:[{l:'カーナビ（電池なし）',en:'Automotive navigation system. without lithium battery. No hazardous materials.',ja:'カーナビ。電池なし。危険物なし。',hl:true,pv:'電池を外す場合は「without lithium battery」と記載'},{l:'カーワックスなし申告',en:'No car wax. No flammable liquid.',ja:'カーワックスなし。可燃性液体なし。',hl:false,pv:''}]},
+
+// ===== き行 =====
+{k:['キャンプ用品','テント','アウトドア用品','寝袋','シュラフ'],
+ n:'テント・寝袋・キャンプ用品',air:'ok',land:'ok',lb:'航空搭載可 / 陸送可',
+ sm:'公式一覧表では「キャンプ用品」として航空搭載可。ガス缶・燃料・ライターは別扱い。',
+ landNote:'ゆうパック陸送でも引受可能。',
+ c:[{o:1,t:'テント・ポール・ペグ・寝袋：航空・陸送とも可'},{o:0,t:'ガス缶・燃料ボトル（燃料入り）：航空・陸送とも不可'}],
+ sf:'燃料・ガス缶を含まないキャンプ用品は航空・陸送とも可',
+ d:[{l:'テント・キャンプ用品',en:'Camping tent and accessories. No fuel, no gas canister, no flammable materials.',ja:'キャンプテント・アクセサリー。燃料なし・ガス缶なし・可燃性物なし。',hl:false,pv:''}]},
+
+// ===== く行 =====
+{k:['クレンジング','クレンジングオイル','クレンジングジェル','クレンジングクリーム','クレンジングパウダー','洗顔','洗顔料','facial cleanser'],
+ n:'クレンジング・洗顔料',air:'cond',land:'ok',lb:'航空：種類次第 / 陸送可',
+ sm:'公式一覧表では「クレンジングオイル・クレンジングジェル・クレンジングクリーム・クレンジングパウダー」として記載。水性・ジェル・クリームは大水性液体GL、スプレータイプは高圧ガス確認要。',
+ landNote:'ゆうパック陸送では引受可能。',
+ c:[{o:1,t:'クレンジングジェル・クリーム（水性GL）：航空可'},{o:1,t:'クレンジングパウダー：航空可'},{o:1,t:'クレンジングオイル（引火点60℃以上）：Not Restrictedで航空可'},{o:0,t:'スプレータイプ（高圧ガス使用）：航空不可'}],
+ sf:'水性・引火点60℃以上の場合',
+ d:[{l:'クレンジングオイル（引火点60℃以上）',en:'Cleansing oil, Not Restricted (flash point above 60°C). nonalcoholic.',ja:'クレンジングオイル（引火点60℃以上）。Not Restricted。ノンアルコール。',hl:true,pv:''},{l:'クレンジングジェル・クリーム（水性）',en:'Cleansing gel (water-based, GL). No flammable liquid. nonalcoholic.',ja:'クレンジングジェル（水性・GL）。可燃性液体なし。ノンアルコール。',hl:false,pv:''},{l:'クレンジングなし申告',en:'No cleansing oil. No flammable liquid. nonalcoholic.',ja:'クレンジングオイルなし。可燃性液体なし。ノンアルコール。',hl:false,pv:''}]},
+
+// ===== こ行 =====
+{k:['コンタクト洗浄液','コンタクトレンズ'],
+ n:'コンタクト洗浄液・コンタクトレンズ',air:'ok',land:'ok',lb:'航空搭載可 / 陸送可',
+ sm:'公式一覧表では「コンタクト洗浄液」として航空搭載可と明記。',
+ landNote:'ゆうパック陸送でも引受可能。',
+ c:[{o:1,t:'コンタクト洗浄液・レンズ：航空・陸送とも可'}],
+ sf:'一般的なコンタクト洗浄液は航空・陸送とも可',
+ d:[{l:'コンタクト洗浄液',en:'Contact lens cleanser. No hazardous materials.',ja:'コンタクト洗浄液。危険物なし。',hl:false,pv:''}]},
+
+// ===== さ行 =====
+{k:['サプリメント','サプリ','ビタミン','栄養補助食品'],
+ n:'サプリメント・栄養補助食品',air:'cond',land:'ok',lb:'航空：種類次第 / 陸送可',
+ sm:'公式一覧表ではサプリメントはGuide No.51、引火点60℃以上・大水性液体・引火点の低い有機材を含まない場合に航空可。',
+ landNote:'ゆうパック陸送では引受可能。',
+ c:[{o:1,t:'錠剤・カプセル等固形：航空・陸送とも可'},{o:1,t:'液体サプリ（非引火性・水性）：航空可'},{o:0,t:'向精神薬・規制物質を含むもの：不可'}],
+ sf:'一般的な固形・液体サプリメントは航空・陸送とも可',
+ d:[{l:'サプリメント（錠剤）',en:'Supplement (tablets/capsules). No hazardous materials.',ja:'サプリメント（錠剤・カプセル）。危険物なし。',hl:false,pv:''}]},
+
+{k:['殺虫剤','防虫剤','農薬','除草剤','虫よけ'],
+ n:'殺虫剤・農薬・除草剤',air:'ng',land:'ng',lb:'航空不可 / 陸送も不可',
+ sm:'公式一覧表にて殺虫剤・農薬・除草剤は毒物または危険物として航空搭載不可・ゆうパック陸送も引受不可。',
+ landNote:'ゆうパック陸送でも引受不可です。',
+ c:[{o:0,t:'農薬・殺虫剤・除草剤：航空・陸送とも不可'}],
+ sf:null,
+ d:[{l:'農薬なし申告',en:'No pesticide. No herbicide. No insecticide. No agricultural chemicals.',ja:'農薬なし。除草剤なし。殺虫剤なし。',hl:false,pv:''}]},
+
+{k:['シャンプー','リンス','コンディショナー','ボディソープ','石鹸','洗剤','ハンドソープ','洗濯洗剤','家庭用洗濯洗剤','laundry'],
+ n:'シャンプー・リンス・家庭用洗濯洗剤',air:'ok',land:'ok',lb:'航空搭載可 / 陸送可',
+ sm:'公式一覧表では「シャンプー」「洗剤・洗濯用洗剤」として航空可（高圧ガスなし条件）。「高圧ガスなし」「no compressed gas」を品名欄に明記が実務上重要。',
+ landNote:'ゆうパック陸送でも引受可能。スプレータイプも陸送なら可。',
+ c:[{o:1,t:'シャンプー・リンス（高圧ガスなし）：航空・陸送とも可'},{o:1,t:'家庭用洗濯洗剤：航空・陸送とも可'},{o:0,t:'スプレータイプ（高圧ガス入り）：航空はエアゾール規制'},{o:0,t:'強酸性・強アルカリ性業務用洗剤：要確認'}],
+ sf:'高圧ガスなし・一般家庭用の場合は航空・陸送とも可',
+ d:[{l:'シャンプー・リンス（高圧ガスなし）',en:'Shampoo / Hair conditioner, no compressed gas, no hazardous materials.',ja:'シャンプー・リンス、高圧ガスなし、危険物なし',hl:true,pv:'「no compressed gas（高圧ガスなし）」を明記'},{l:'家庭用洗濯洗剤',en:'Household laundry detergent, non-flammable, no hazardous materials.',ja:'家庭用洗濯洗剤、不燃性、危険物なし',hl:true,pv:''},{l:'石鹸（固形）',en:'Soap (solid). No hazardous materials.',ja:'石鹸（固形）。危険物なし。',hl:false,pv:''}]},
+
+{k:['食品','食べ物','お菓子','チョコレート','菓子','スナック','インスタント','調味料','食料品','米','野菜'],
+ n:'食品・加工食品・お菓子',air:'cond',land:'ok',lb:'航空：検疫次第 / 陸送可',
+ sm:'食品は危険物ではありませんが宛先国の検疫・輸入規制に従う必要があります。ゆうパック（国内）陸送では引受可。',
+ landNote:'ゆうパック陸送（国内）では食品を引受可能。',
+ c:[{o:1,t:'密封された加工食品・菓子類：多くの国で可'},{o:1,t:'ゆうパック陸送（国内）：引受可'},{o:0,t:'生鮮食品・冷蔵品：航空不可'},{o:0,t:'肉類・乳製品：宛先国により輸入禁止の場合あり'}],
+ sf:'密封された常温保存可能な加工食品は航空・陸送とも可（宛先国規制確認要）',
+ d:[{l:'加工食品',en:'Processed food (snacks/confectionery), commercially sealed, non-perishable. No meat, no fresh produce.',ja:'加工食品（菓子類）・市販密封品・常温保存可能。肉類なし・生鮮品なし。',hl:false,pv:''},{l:'食品なし申告',en:'Contains no food items. No perishables. No meat. No plant material.',ja:'食品なし。生鮮品なし。肉類なし。植物類なし。',hl:false,pv:''}]},
+
+// ===== た行 =====
+{k:['体温計','温度計','気圧計','デジタル体温計','アナログ体温計'],
+ n:'体温計・温度計・気圧計',air:'cond',land:'ok',lb:'航空：種類次第 / 陸送可',
+ sm:'公式一覧表では「体温計・温度計・気圧計」として記載。水銀体温計は液体（水銀）が含まれているため航空不可。デジタル体温計はリチウム電池確認要。',
+ landNote:'ゆうパック陸送では引受可能。',
+ c:[{o:0,t:'水銀体温計：水銀（危険物）のため航空不可'},{o:1,t:'デジタル体温計（電池GL含む）：航空可（リチウム電池GL）'},{o:1,t:'ゆうパック陸送：引受可'}],
+ sf:'デジタル体温計（電池確認済み）の場合',
+ d:[{l:'デジタル体温計',en:'Digital thermometer. Lithium battery included (GL). No damage.',ja:'デジタル体温計。リチウム電池含む（GL）。損傷なし。',hl:false,pv:''},{l:'水銀体温計なし申告',en:'No mercury thermometer. No liquid mercury. No hazardous materials.',ja:'水銀体温計なし。水銀なし。危険物なし。',hl:false,pv:''}]},
+
+{k:['たばこ','タバコ','電子タバコ','加熱式たばこ','煙草','シーシャ'],
+ n:'たばこ・電子タバコ・加熱式たばこ',air:'cond',land:'ok',lb:'航空：種類次第 / 陸送可',
+ sm:'公式一覧表では「たばこ（紙・電子・加熱・水(シーシャ)）」として記載。電子タバコ部品（カトマイザー・リキッド等）はアルコール・電池に注意。宛先国によって輸入禁止の場合あり。',
+ landNote:'ゆうパック陸送では引受可能（宛先国規制確認要）。',
+ c:[{o:1,t:'紙巻きたばこ：危険物ではないが宛先国規制確認要'},{o:0,t:'電子タバコ用リキッド（可燃性溶剤含む）：不可の場合あり'},{o:0,t:'多くの国でたばこの輸入規制あり：事前確認必須'}],
+ sf:'紙巻きたばこ少量・宛先国規制確認済みの場合',
+ d:[{l:'たばこなし申告',en:'Contains no tobacco. No cigarette. No e-cigarette or related products.',ja:'たばこなし。紙巻きたばこなし。電子タバコ関連品なし。',hl:false,pv:''}]},
+
+{k:['ダイビング','BCジャケット','bc','bcd','タンク','ボンベ','ダイビング用品','レギュレーター','水中ライト','ウエットスーツ'],
+ n:'ダイビング用品（BCジャケット・タンク・レギュレーター）',air:'cond',land:'ok',lb:'航空：エアー残確認 / 陸送可',
+ sm:'公式一覧表では「ダイビング用品・BC、BCD・ボンベ（タンク）・ダイビングライト（水中ライト）・レギュレーター」として記載（2024.4.30更新）。BCジャケット（エアー残無し）は航空可。ボンベ（タンク）は高圧ガスのため航空不可。',
+ landNote:'ゆうパック陸送ではBCジャケット等（ボンベなし）を引受可能。',
+ c:[{o:1,t:'BCジャケット（エアー残無し）：航空可'},{o:0,t:'BCジャケット（エアー残あり）：航空不可'},{o:0,t:'ボンベ（タンク）：高圧ガスのため航空不可'},{o:1,t:'ゆうパック陸送：BCジャケット等引受可'}],
+ sf:'航空：エアー残無し・ボンベ無し　陸送：引受可',
+ d:[{l:'BCジャケット（エアー残無し）',en:'BC jacket, no residual air (empty)',ja:'BCジャケット、エアー残無し（空）',hl:true,pv:'「no residual air」を品名欄に明記'},{l:'タンク無しダイビング用品',en:'Diving equipment. No tank (cylinder)',ja:'ダイビング用品。タンク（ボンベ）無し。',hl:true,pv:'「No tank」を品名欄に明記'},{l:'水中ライト（電池無し）',en:'Underwater light. No battery',ja:'水中ライト。電池無し。',hl:true,pv:'「No battery」を品名欄に明記'}]},
+
+{k:['脱毛剤','脱毛クリーム','除毛剤'],
+ n:'脱毛剤・脱毛クリーム・除毛剤',air:'cond',land:'ok',lb:'航空：引火点次第 / 陸送可',
+ sm:'公式一覧表では「脱毛剤・脱毛クリーム・除毛剤」として記載。SDS等により引火点60℃を超えることを確認して航空可（「Not Restricted」と記載）。',
+ landNote:'ゆうパック陸送では引受可能。',
+ c:[{o:1,t:'引火点60℃以上：「Not Restricted」と記載して航空可'},{o:1,t:'ゆうパック陸送：引受可'},{o:0,t:'引火点60℃以下・スプレータイプ：要確認'}],
+ sf:'引火点60℃以上の場合',
+ d:[{l:'脱毛クリーム（引火点60℃以上）',en:'Depilatory cream. Not Restricted (flash point above 60°C).',ja:'脱毛クリーム。Not Restricted（引火点60℃以上）。',hl:true,pv:''}]},
+
+// ===== な行 =====
+{k:['ニッケル水素','ニカド','ニッケルカドミウム'],
+ n:'ニッケル水素電池・ニカド電池',air:'ok',land:'ok',lb:'航空搭載可 / 陸送可',
+ sm:'公式一覧表では「ニッケル水素電池」「ニッケルカドミウム蓄電池」として航空搭載可（Not Restricted as per Special Provision A123）と明記（2025.3.28更新）。',
+ landNote:'ゆうパック陸送でも引受可能。',
+ c:[{o:1,t:'ニッケル水素・ニカド電池：航空・陸送とも可'},{o:0,t:'破損・液漏れがある場合は不可'}],
+ sf:'破損・液漏れがなければ航空・陸送とも可',
+ d:[{l:'ニッケル水素電池',en:'Nickel-metal hydride battery. Not Restricted as per Special Provision A123.',ja:'ニッケル水素電池。特別規定A123により規制対象外。',hl:true,pv:'品名欄に「Not Restricted as per Special Provision A123」と記載可'}]},
+
+// ===== は行 =====
+{k:['花火','爆竹','発煙筒','クラッカー','発炎筒'],
+ n:'花火・爆竹・発煙筒・クラッカー',air:'ng',land:'ng',lb:'航空不可 / 陸送も不可',
+ sm:'公式一覧表にて火工品類（Class 1）として航空搭載不可・ゆうパック陸送も引受不可。',
+ landNote:'ゆうパック陸送でも引受不可です。',
+ c:[{o:0,t:'花火・爆竹・発煙筒・クラッカー：航空・陸送とも不可'}],
+ sf:null,
+ d:[{l:'花火なし申告',en:'Contains no fireworks. No firecrackers. No pyrotechnic articles. No explosives.',ja:'花火なし。爆竹なし。火工品なし。爆発物なし。',hl:false,pv:''}]},
+
+{k:['ハンドクリーム','hand cream'],
+ n:'ハンドクリーム',air:'cond',land:'ok',lb:'航空：アルコール度数次第 / 陸送可',
+ sm:'公式一覧表では「ハンドクリーム」として記載。アルコールフリーの場合または度数が低い場合は航空可。アルコール度数24%以下はSpecial Provision A58適用。',
+ landNote:'ゆうパック陸送では引受可能。',
+ c:[{o:1,t:'アルコールフリー（ノンアルコール）：航空・陸送とも可'},{o:1,t:'アルコール度数24%以下：Special Provision A58適用で航空可'},{o:0,t:'高アルコール含有：要確認'}],
+ sf:'アルコールフリーまたは度数24%以下の場合',
+ d:[{l:'ハンドクリーム（ノンアルコール）',en:'Hand cream (alcohol-free). nonalcoholic. No flammable liquid.',ja:'ハンドクリーム（ノンアルコール）。ノンアルコール。可燃性液体なし。',hl:true,pv:''},{l:'ハンドクリーム（度数24%以下）',en:'Hand cream. Not Restricted, as per Special Provision A 58. (alcohol content below 24%)',ja:'ハンドクリーム。特別規定A58適用（アルコール度数24%以下）。',hl:true,pv:'度数24%以下のみ適用'}]},
+
+{k:['ヘアアイロン','ヘアドライヤー','ドライヤー','ヘアストレートナー'],
+ n:'ヘアアイロン・ヘアドライヤー',air:'cond',land:'ok',lb:'航空：ガス・電池確認 / 陸送可',
+ sm:'公式一覧表では「ヘアアイロン・ヘアドライヤー」として記載。ガス式（LPG等）は航空不可。電気式はリチウム電池内蔵の場合確認要（「ガス式ヘアアイロン（ガスGL）」と記載）。',
+ landNote:'ゆうパック陸送では引受可能。',
+ c:[{o:1,t:'電気式ヘアアイロン・ドライヤー（リチウム電池なし）：航空可'},{o:0,t:'ガス式（ブタン・LPG使用）：航空不可'},{o:1,t:'コードレス（リチウム電池100Wh以下）：航空可'},{o:1,t:'ゆうパック陸送：引受可'}],
+ sf:'電気式（ガスなし）・コードレスは100Wh以下の場合',
+ d:[{l:'電気式ヘアアイロン（ガスなし）',en:'Hair iron / Hair dryer (electric). No gas cylinder. No flammable gas. (Gas-free)',ja:'ヘアアイロン・ドライヤー（電気式）。ガスシリンダーなし。可燃性ガスなし。',hl:true,pv:'「ガスなし」を品名欄に明記'},{l:'コードレスアイロン（電池なし）',en:'Cordless hair iron. without lithium battery',ja:'コードレスヘアアイロン。電池なし。',hl:true,pv:'電池を外す場合は「without lithium battery」と記載'}]},
+
+{k:['ヘアカラー','毛染め','ヘアマニキュア','ヘアムース','ヘアワックス','ヘアリキッド','ヘアオイル','ヘアトリートメント','整髪料','育毛剤','ヘアトニック','ヘアスプレー'],
+ n:'整髪料・ヘアカラー・ヘアケア用品',air:'cond',land:'ok',lb:'航空：引火点次第 / 陸送可',
+ sm:'公式一覧表では「整髪料（ヘアカラー）・ヘアムース・ヘアワックス・ヘアリキッド・ヘアオイル・ヘアスプレー」として記載。引火点60℃以下なら「Not Restricted」と品名欄に記載して航空可。ヘアスプレーはアルコールを含むため別途確認（2025.3.28更新）。',
+ landNote:'ゆうパック陸送では引受可能。スプレータイプも陸送なら可。',
+ c:[{o:1,t:'引火点60℃以下：「Not Restricted」と記載して航空可'},{o:1,t:'ゆうパック陸送：引受可（スプレータイプも可）'},{o:0,t:'スプレータイプ（エアゾール）：航空は要確認'}],
+ sf:'航空：引火点60℃以下の消費者向け少量品　陸送：引受可',
+ d:[{l:'整髪料・ヘアカラー（引火点60℃以下）',en:'Not Restricted',ja:'「Not Restricted」と品名欄に記載',hl:true,pv:'引火点60℃以下の場合。毛染剤・ヘアムース・ヘアワックス・ヘアリキッド・ヘアオイル共通'},{l:'整髪料なし申告',en:'Contains no hair styling products. No flammable liquid.',ja:'整髪料なし。可燃性液体なし。',hl:false,pv:''}]},
+
+{k:['香水','フレグランス','コロン','オードトワレ','perfume','フレグランスミスト'],
+ n:'香水・フレグランス類',air:'ng',land:'ok',lb:'航空引受不可 / 陸送引受可',
+ sm:'公式一覧表では「香水（perfume）引受不可」と明記。品名欄に「nonalcoholic」等の表記が必要。アルコール度数24%以下はSpecial Provision A58適用で航空可。',
+ landNote:'ゆうパック陸送（国内）では引受可能です。',
+ c:[{o:0,t:'アルコール含有香水：EMS（航空）引受不可'},{o:1,t:'ゆうパック陸送：引受可'},{o:1,t:'ノンアルコール香水：航空も可'},{o:1,t:'アルコール度数24%以下：Special Provision A58適用で航空可'}],
+ sf:'航空：ノンアルコールまたは度数24%以下のみ可　陸送：引受可',
+ d:[{l:'アルコールなし申告（品名欄）',en:'nonalcoholic',ja:'ノンアルコール',hl:true,pv:'品名欄に「nonalcoholic」と明記'},{l:'度数24%以下（航空可）',en:'Not Restricted, as per Special Provision A 58',ja:'特別規定A58により規制対象外（度数24%以下）',hl:true,pv:'度数24%以下のみ適用'},{l:'ノンアルコール香水',en:'Perfume, non-alcoholic',ja:'香水（ノンアルコール）',hl:false,pv:''},{l:'香水なし申告',en:'Contains no perfume. No alcohol. nonalcoholic.',ja:'香水なし。アルコールなし。',hl:false,pv:''}]},
+
+// ===== ま行 =====
+{k:['マウスウォッシュ','洗口液','液体歯磨き'],
+ n:'マウスウォッシュ・洗口液',air:'cond',land:'ok',lb:'航空：アルコール度数次第 / 陸送可',
+ sm:'公式一覧表では「マウスウォッシュ（洗口液・液体歯磨き）」として記載。アルコールが含まれる場合は度数確認要。度数24%以下はSpecial Provision A58適用で航空可。',
+ landNote:'ゆうパック陸送では引受可能。',
+ c:[{o:1,t:'アルコール度数24%以下（ノンアルコール含む）：航空可'},{o:0,t:'アルコール度数24%超：要確認'},{o:1,t:'ゆうパック陸送：引受可'}],
+ sf:'度数24%以下またはノンアルコールの場合',
+ d:[{l:'マウスウォッシュ（ノンアルコール）',en:'Mouthwash. nonalcoholic. No flammable liquid.',ja:'マウスウォッシュ。ノンアルコール。可燃性液体なし。',hl:true,pv:''},{l:'マウスウォッシュ（度数24%以下）',en:'Mouthwash. Not Restricted, as per Special Provision A 58. (alcohol content below 24%)',ja:'マウスウォッシュ。特別規定A58適用（度数24%以下）。',hl:true,pv:'度数24%以下のみ適用'}]},
+
+{k:['磁石','マグネット','磁気ネックレス','ネオジム'],
+ n:'磁石・磁気ネックレス・磁性体',air:'cond',land:'ok',lb:'航空：磁場強度次第 / 陸送可',
+ sm:'公式一覧表では「磁石」「磁気ネックレス」として記載。磁気ネックレスは航空可（原則）。強力磁石は磁場基準確認要。「磁気ブレスレットは原則弱い、航空搭載可それ以外の磁力性物（会社用のマグネット等は不可）」と記載あり。',
+ landNote:'ゆうパック陸送では引受可能。',
+ c:[{o:1,t:'磁気ネックレス：航空可（原則）'},{o:1,t:'小型の一般的な磁石：通常問題なし'},{o:0,t:'ネオジム強力磁石・大型磁石：要計測・要申告'},{o:0,t:'磁場基準超過の磁石：航空不可'}],
+ sf:'磁気ネックレス・小型磁石は航空可。強力磁石は要確認。',
+ d:[{l:'磁石なし申告',en:'Contains no magnetic materials. No magnets.',ja:'磁性体なし。磁石なし。',hl:false,pv:''},{l:'弱磁石（安全申告）',en:'Small decorative magnet. Surface magnetic field is below IATA limits. No strong magnet.',ja:'小型装飾用磁石。表面磁場はIATA基準値以下。強力磁石なし。',hl:false,pv:''}]},
+
+{k:['マニキュア','ネイル','除光液','ネイルリムーバー','ネイルオイル','ジェルネイル','ネイルポリッシュ','ネイルラッカー'],
+ n:'マニキュア・除光液・ネイル製品',air:'cond',land:'ok',lb:'航空：引火点次第 / 陸送可',
+ sm:'公式一覧表では「マニキュア・ネイルポリッシュ・ポリッシュネイル・ネイルカラー・ネイルラッカー」として記載（2024.8.28更新）。引火点60℃を超えることを確認して航空可。ジェルネイル（引火点GL）・ネイルオイル（大水性液体GL）含む。',
+ landNote:'ゆうパック陸送では引受可能。',
+ c:[{o:1,t:'マニキュア（引火点60℃以上確認済み）：航空可'},{o:1,t:'ネイルオイル（大水性液体GL）：航空可'},{o:0,t:'除光液（アセトン・引火点低い）：航空不可'},{o:1,t:'ゆうパック陸送：引受可'}],
+ sf:'引火点60℃以上確認済み・消費者向け少量の場合',
+ d:[{l:'マニキュア（引火点60℃以上）',en:'Nail polish (flash point above 60°C). Consumer quantity. No flammable liquid (GL).',ja:'マニキュア（引火点60℃以上）。消費者用。可燃性液体非該当（GL）。',hl:false,pv:''},{l:'ネイルなし申告',en:'No nail polish. No acetone. No flammable liquid.',ja:'マニキュア・除光液なし。アセトンなし。可燃性液体なし。',hl:false,pv:''}]},
+
+{k:['モバイルバッテリー','充電器','バッテリーチャージャー','powerbank'],
+ n:'モバイルバッテリー・充電器',air:'cond',land:'ok',lb:'航空：容量次第 / 陸送可',
+ sm:'公式一覧表では「モバイルバッテリー・充電器（携帯式電源・電池式充電器）」として記載。UN3480として100Wh以下なら航空可。',
+ landNote:'ゆうパック陸送では引受可能。',
+ c:[{o:1,t:'100Wh以下（約27,000mAh以下）：航空搭載可'},{o:1,t:'ゆうパック陸送：引受可'},{o:0,t:'100Wh超：航空不可'},{o:0,t:'損傷・膨張：不可'}],
+ sf:'航空：100Wh以下・損傷なし　陸送：引受可',
+ d:[{l:'モバイルバッテリー',en:'Power bank (lithium-ion battery, UN3480), 50Wh. No damage, no leakage.',ja:'モバイルバッテリー（UN3480・50Wh）。損傷なし・液漏れなし。',hl:false,pv:''},{l:'充電ケーブルのみ',en:'Charging cable only. No battery',ja:'充電ケーブルのみ。電池なし。',hl:true,pv:'電池を含まない場合は「No battery」を明記'}]},
+
+// ===== や行 =====
+{k:['薬用アルコール','医療用アルコール'],
+ n:'薬用アルコール・医療用アルコール',air:'cond',land:'ok',lb:'航空：度数次第 / 陸送可',
+ sm:'公式一覧表では「薬用アルコール」として記載。アルコール度数24%以下なら「Not Restricted」と記載して航空可。度数が高い場合は航空不可。',
+ landNote:'ゆうパック陸送では引受可能。',
+ c:[{o:1,t:'度数24%以下：「Not Restricted」と記載して航空可'},{o:0,t:'度数24%超：危険物として取扱い要'},{o:1,t:'ゆうパック陸送：引受可'}],
+ sf:'度数24%以下の場合',
+ d:[{l:'薬用アルコール（度数24%以下）',en:'Alcohol for pharmaceutical purpose. Not Restricted, as per Special Provision A 58. (alcohol below 24%)',ja:'薬用アルコール。特別規定A58適用（度数24%以下）。',hl:true,pv:''},{l:'アルコールなし申告',en:'Contains no alcohol. nonalcoholic.',ja:'アルコールなし。ノンアルコール。',hl:false,pv:''}]},
+
+// ===== ら行 =====
+{k:['ランタン','キャンプランタン','ledランタン','懐中電灯','ライト','ヘッドライト','水中ライト','led light'],
+ n:'ランタン・懐中電灯・LEDライト・水中ライト',air:'cond',land:'ok',lb:'航空：種類次第 / 陸送可',
+ sm:'公式一覧表では「ランタン」「LED（キャップライト・ライト）」として記載。LED・電池式は航空可。ガス式・灯油式は航空不可。',
+ landNote:'ゆうパック陸送では引受可能。',
+ c:[{o:1,t:'LED・電池式ランタン（燃料なし）：航空可'},{o:1,t:'ゆうパック陸送：引受可'},{o:0,t:'ガス式・灯油式（燃料入り）：航空不可'},{o:0,t:'燃料入りのまま送付：不可'}],
+ sf:'航空：LED・電池式（燃料なし）　陸送：引受可',
+ d:[{l:'LEDランタン（アルカリ電池）',en:'LED lantern with alkaline batteries (non-lithium). No fuel. No hazardous materials.',ja:'LEDランタン（アルカリ電池使用）。燃料なし。危険物なし。',hl:false,pv:''},{l:'水中ライト（電池なし）',en:'Underwater light. No battery',ja:'水中ライト。電池なし。',hl:true,pv:'電池を除く場合は「No battery」を品名欄に明記'},{l:'充電式LEDランタン',en:'LED lantern with lithium-ion battery (UN3481), less than 20Wh. No fuel, no damage.',ja:'充電式LEDランタン（UN3481・20Wh未満）。燃料なし・損傷なし。',hl:false,pv:''}]},
+
+{k:['リチウム電池','リチウムイオン','リチウムポリマー','lithium','リチウム金属電池'],
+ n:'リチウム電池（リチウムイオン・ポリマー・金属）',air:'cond',land:'ok',lb:'航空：条件付き可 / 陸送可',
+ sm:'公式一覧表では「リチウムイオン電池・リチウム金属電池」として記載。UN3480（単体）またはUN3481（機器組込）として規制。100Wh以下なら航空可。',
+ landNote:'ゆうパック陸送（国内）はリチウム電池を含む荷物を引受可能。損傷品は不可。',
+ c:[{o:1,t:'単体電池（UN3480）：100Wh以下なら航空可'},{o:1,t:'機器組込（UN3481）：100Wh以下なら航空可'},{o:1,t:'ゆうパック陸送：損傷なしなら引受可'},{o:0,t:'損傷・膨張・液漏れ：不可'},{o:0,t:'300Wh超：不可'}],
+ sf:'航空：100Wh以下・損傷なし　陸送：損傷なし',
+ d:[{l:'単体リチウム電池（UN3480）',en:'Lithium-ion battery (UN3480), 50Wh, 1 cell. No damage, no leakage.',ja:'リチウムイオン電池（UN3480）50Wh・1個。損傷なし・液漏れなし。',hl:false,pv:''},{l:'機器組込（UN3481）',en:'Lithium-ion battery (UN3481) installed in equipment, 30Wh. No damage.',ja:'リチウムイオン電池（UN3481）機器組込・30Wh。損傷なし。',hl:false,pv:''},{l:'電池なし申告',en:'No battery',ja:'電池なし',hl:true,pv:'電池を除いて送る場合は「No battery」を品名欄に明記'}]},
+
+// ===== その他重要品目 =====
+{k:['アルコール','エタノール','消毒液','消毒用アルコール','手指消毒','除菌'],
+ n:'アルコール・消毒液',air:'cond',land:'ok',lb:'航空：度数次第 / 陸送可',
+ sm:'公式一覧表では「消毒剤・除菌剤（アルコールを成分とするもの）」として記載。アルコール度数24%以下はSpecial Provision A58適用で航空可。度数70%超は航空不可。ゆうパック陸送は引受可。',
+ landNote:'ゆうパック陸送（国内）では消毒用アルコール・エタノールも引受可能です。',
+ c:[{o:1,t:'度数24%以下：「Not Restricted, as per Special Provision A 58」と記載して航空可'},{o:1,t:'ゆうパック陸送：度数に関わらず引受可'},{o:0,t:'度数70%超：航空引受不可'},{o:0,t:'業務用・大量：要確認'}],
+ sf:'航空：度数24%以下　陸送：引受可',
+ d:[{l:'度数24%以下（航空可）',en:'Not Restricted, as per Special Provision A 58',ja:'特別規定A58により規制対象外（度数24%以下）',hl:true,pv:'度数24%以下のみ適用'},{l:'アルコールなし申告',en:'nonalcoholic',ja:'ノンアルコール',hl:true,pv:'品名欄に「nonalcoholic」と明記'}]},
+
+{k:['スマートフォン','スマホ','携帯電話','iphone','android','携帯'],
+ n:'スマートフォン・携帯電話',air:'cond',land:'ok',lb:'航空：電池次第 / 陸送可',
+ sm:'公式一覧表では「スマートフォン（携帯電話）」として記載。内蔵リチウム電池がUN3481として規制対象。ほとんどの家庭用スマートフォンは100Wh以下なので条件を満たします。',
+ landNote:'ゆうパック陸送では引受可能。',
+ c:[{o:1,t:'一般的なスマートフォン（10〜20Wh程度）：航空可'},{o:1,t:'ゆうパック陸送：引受可'},{o:0,t:'損傷・電池膨張がある場合は不可'}],
+ sf:'航空：損傷なし・膨張なし　陸送：引受可',
+ d:[{l:'スマートフォン',en:'Smartphone with lithium-ion battery (UN3481), less than 20Wh. No damage.',ja:'スマートフォン（UN3481・20Wh未満）。損傷なし。',hl:false,pv:''},{l:'電池なし端末',en:'Mobile phone body only. No battery',ja:'携帯電話本体のみ。電池なし。',hl:true,pv:'電池を外す場合は「No battery」を明記'}]},
+
+{k:['パソコン','ノートパソコン','ラップトップ','laptop','タブレット','ipad'],
+ n:'ノートパソコン・タブレット',air:'cond',land:'ok',lb:'航空：電池次第 / 陸送可',
+ sm:'公式一覧表では「パソコン（モニタ・パーツ）・タブレットPC」として記載。内蔵リチウム電池がUN3481として規制対象。100Wh以下なら航空可。',
+ landNote:'ゆうパック陸送では引受可能。',
+ c:[{o:1,t:'一般的なノートPC・タブレット（40〜100Wh以下）：航空可'},{o:1,t:'ゆうパック陸送：引受可'},{o:0,t:'100Wh超のバッテリー搭載機種：要確認'},{o:0,t:'損傷・膨張：不可'}],
+ sf:'内蔵電池100Wh以下・損傷なしの場合',
+ d:[{l:'ノートPC',en:'Laptop computer with lithium-ion battery (UN3481), less than 100Wh. No damage.',ja:'ノートパソコン（UN3481・100Wh未満）。損傷なし。',hl:false,pv:''},{l:'タブレット',en:'Tablet computer with lithium-ion battery (UN3481), less than 50Wh. No damage.',ja:'タブレット（UN3481・50Wh未満）。損傷なし。',hl:false,pv:''}]},
+
+{k:['接着剤','ボンド','グルー','のり','糊'],
+ n:'接着剤・糊・ボンド',air:'cond',land:'ok',lb:'航空：種類次第 / 陸送可',
+ sm:'公式一覧表では「接着剤」として記載。SDS確認後、引火点60℃を超えることを確認、またはNot Restrictedとして航空可の場合あり。ゆうパック陸送では引受可。',
+ landNote:'ゆうパック陸送では引受可能。',
+ c:[{o:1,t:'水性接着剤・固形のり：航空・陸送とも可'},{o:1,t:'引火点60℃以上の接着剤（SDS確認済み）：Not Restrictedで航空可'},{o:0,t:'溶剤系接着剤（シンナー含有等）：航空不可の場合あり'}],
+ sf:'水性・固形タイプまたはNot Restricted確認済みの場合',
+ d:[{l:'接着剤なし申告',en:'Without adhesive',ja:'接着剤なし',hl:true,pv:'品名欄に「Without adhesive」と明記'},{l:'水性接着剤',en:'Water-based adhesive, non-flammable. Without adhesive (hazardous solvent).',ja:'水性接着剤、不燃性。危険な溶剤なし。',hl:false,pv:''},{l:'接着剤（Not Restricted確認）',en:'Adhesive. Not Restricted (flash point above 60°C). Non-flammable.',ja:'接着剤。Not Restricted（引火点60℃以上）。不燃性。',hl:true,pv:'SDS確認が必要'}]},
+
+{k:['スプレー','エアゾール','制汗剤','デオドラント','高圧ガス'],
+ n:'スプレー缶・エアゾール・制汗剤',air:'cond',land:'ok',lb:'航空：条件次第 / 陸送引受可',
+ sm:'公式一覧表では「スプレー缶」として高圧ガスに分類。消費者向け少量品（不燃性ガス）は航空可。ゆうパック陸送は引受可。',
+ landNote:'ゆうパック陸送（国内）ではスプレー缶・エアゾール缶も引受可能。',
+ c:[{o:1,t:'消費者向け化粧品スプレー（不燃性ガス）少量：航空可'},{o:1,t:'ゆうパック陸送：スプレー缶も引受可'},{o:0,t:'殺虫剤・農薬スプレー：航空不可'},{o:0,t:'可燃性ガス（LPG等）使用：航空不可'}],
+ sf:'航空：不燃性ガス使用の消費者向け少量品　陸送：引受可',
+ d:[{l:'高圧ガスなし申告',en:'No compressed gas. No pressurized container.',ja:'高圧ガスなし。加圧容器なし。',hl:true,pv:'スプレータイプではない場合に品名欄へ明記'},{l:'化粧品スプレー（消費者用）',en:'Hair spray, consumer use, non-flammable propellant, less than 500ml.',ja:'ヘアスプレー、消費者用、不燃性噴射剤、500ml以下',hl:false,pv:''}]},
+
+{k:['ゲーム機','switch','nintendo','プレイステーション','携帯型ゲーム機','据え置きゲーム機'],
+ n:'ゲーム機（携帯型・据え置き型）',air:'cond',land:'ok',lb:'航空：電池次第 / 陸送可',
+ sm:'公式一覧表では「ゲーム機」「携帯型ゲーム機」として記載。リチウム電池内蔵のためUN3481として規制対象。100Wh以下なら航空可。',
+ landNote:'ゆうパック陸送では引受可能。',
+ c:[{o:1,t:'内蔵電池通常20Wh以下：航空可'},{o:1,t:'ゆうパック陸送：引受可'},{o:0,t:'損傷・膨張がある電池：不可'}],
+ sf:'内蔵電池100Wh以下・損傷なしの場合',
+ d:[{l:'携帯ゲーム機',en:'Portable game console with lithium-ion battery (UN3481), less than 20Wh. No damage.',ja:'携帯ゲーム機（UN3481・20Wh未満）。損傷なし。',hl:false,pv:''},{l:'ゲームソフトのみ',en:'Game cartridges only. No battery',ja:'ゲームカセットのみ。電池なし。',hl:true,pv:'電池を含まない場合は「No battery」を明記'}]},
+
+{k:['ドローン','drone','ラジコン'],
+ n:'ドローン・ラジコン',air:'cond',land:'ok',lb:'航空：電池次第 / 陸送可',
+ sm:'公式一覧表では「ドローン」「ラジコン」として記載。リチウム電池内蔵のためUN3481/UN3480として規制対象。',
+ landNote:'ゆうパック陸送では引受可能。',
+ c:[{o:1,t:'本体（電池なし）：危険物に該当しない'},{o:1,t:'電池100Wh以下：UN3480として搭載可'},{o:0,t:'電池100Wh超：不可'},{o:1,t:'ゆうパック陸送：引受可'}],
+ sf:'電池100Wh以下・損傷なし',
+ d:[{l:'ドローン本体（電池なし）',en:'Drone body only. No battery. No hazardous materials.',ja:'ドローン本体のみ。電池なし。危険物なし。',hl:true,pv:''},{l:'電池込み',en:'Drone with lithium polymer battery (UN3481), less than 50Wh. No damage.',ja:'ドローン（UN3481・50Wh未満）。損傷なし。',hl:false,pv:''}]},
+
+{k:['医薬品','薬','錠剤','カプセル','市販薬'],
+ n:'医薬品・錠剤・カプセル',air:'cond',land:'ok',lb:'航空：種類次第 / 陸送可',
+ sm:'公式一覧表では「薬・医薬品」として記載。一般医薬品（OTC）は航空可。向精神薬・麻薬は不可。宛先国の輸入規制確認要。',
+ landNote:'ゆうパック陸送では市販薬を引受可能。',
+ c:[{o:1,t:'市販の一般医薬品（OTC）：航空・陸送とも可'},{o:0,t:'向精神薬・麻薬：航空・陸送とも不可'},{o:0,t:'宛先国で輸入禁止の医薬品：不可'}],
+ sf:'市販薬・個人使用量・向精神薬を含まない場合',
+ d:[{l:'一般薬',en:'OTC medicine (tablets/capsules), personal use. No controlled substances. No narcotics.',ja:'市販医薬品（錠剤・カプセル）・個人使用量。規制薬物なし。麻薬なし。',hl:false,pv:''},{l:'薬なし申告',en:'Contains no medicine. No pharmaceuticals. No controlled substances.',ja:'医薬品なし。薬品なし。規制物質なし。',hl:false,pv:''}]},
+
+{k:['灯油','石油ストーブ','灯油タンク'],
+ n:'灯油・灯油タンク・石油ストーブ',air:'ng',land:'ng',lb:'航空不可 / 陸送も不可',
+ sm:'公式一覧表では「灯油タンク・ポリタンク」は可燃性液体として航空搭載不可。ゆうパック陸送も引受不可。',
+ landNote:'ゆうパック陸送でも引受不可です。',
+ c:[{o:0,t:'灯油・灯油タンク（使用済み含む）：航空・陸送とも不可'}],
+ sf:null,
+ d:[{l:'燃料なし申告',en:'No kerosene. No fuel. No flammable liquid.',ja:'灯油なし。燃料なし。可燃性液体なし。',hl:false,pv:''}]},
+
+{k:['塗料','ペンキ','ラッカー','シンナー','溶剤'],
+ n:'塗料・ラッカー・シンナー類',air:'cond',land:'ok',lb:'航空：種類次第 / 陸送可',
+ sm:'油性塗料・シンナーは航空不可。水性塗料（非可燃性）は航空可の場合あり。ゆうパック陸送では引受可能な場合あり。',
+ landNote:'ゆうパック陸送では引受可能な場合があります（要確認）。',
+ c:[{o:0,t:'油性塗料・ラッカー：航空不可'},{o:0,t:'シンナー：航空不可'},{o:1,t:'水性塗料（非可燃性・少量）：航空可の場合あり'},{o:1,t:'ゆうパック陸送：引受可（要確認）'}],
+ sf:'航空：水性塗料少量のみ可　陸送：引受可（要確認）',
+ d:[{l:'塗料なし申告',en:'No paint. No lacquer. No thinner. No flammable liquid or solvent.',ja:'塗料なし。ラッカーなし。シンナーなし。可燃性液体・溶剤なし。',hl:false,pv:''},{l:'水性塗料（航空可）',en:'Water-based paint only. Non-flammable. Less than 1L. No solvent.',ja:'水性塗料のみ。不燃性。1L以下。溶剤なし。',hl:false,pv:''}]},
+
+{k:['本','書籍','雑誌','マンガ','漫画','コミック'],
+ n:'本・書籍・雑誌',air:'ok',land:'ok',lb:'航空搭載可 / 陸送可',
+ sm:'本・書籍・雑誌類は危険物に該当せず、航空搭載・陸送ともに引受可能です。',
+ landNote:'ゆうパック陸送でも引受可能。',
+ c:[{o:1,t:'一般書籍・雑誌：航空・陸送とも可'},{o:0,t:'違法・有害内容の出版物：不可'}],
+ sf:'一般的な書籍・雑誌は航空・陸送とも可',
+ d:[{l:'書籍',en:'Books / magazines / comics. No hazardous materials. Printed matter only.',ja:'書籍・雑誌・マンガ。危険物なし。印刷物のみ。',hl:false,pv:''}]},
+
+{k:['靴','シューズ','スニーカー','サンダル','ブーツ'],
+ n:'靴・シューズ',air:'ok',land:'ok',lb:'航空搭載可 / 陸送可',
+ sm:'靴・シューズ類は危険物に該当せず、航空搭載・陸送ともに引受可能です。',
+ landNote:'ゆうパック陸送でも引受可能。',
+ c:[{o:1,t:'スニーカー・サンダル・ブーツ等：航空・陸送とも可'}],
+ sf:'一般的な靴・シューズは航空・陸送とも可',
+ d:[{l:'靴・シューズ',en:'Shoes (sneakers/boots/sandals). No battery, no liquid, no hazardous materials.',ja:'靴（スニーカー・ブーツ・サンダル）。電池なし・液体なし・危険物なし。',hl:false,pv:''}]},
+
+{k:['ゴルフボール','スポーツ用品','ボール','ラケット','グローブ'],
+ n:'スポーツ用品・ボール類',air:'ok',land:'ok',lb:'航空搭載可 / 陸送可',
+ sm:'公式一覧表ではゴルフボールは「火薬を使うスモークガンが含まれていないことを確認」の条件。一般的なスポーツ用品は航空可。',
+ landNote:'ゆうパック陸送でも引受可能。',
+ c:[{o:1,t:'一般的なスポーツ用品・ボール：航空・陸送とも可'},{o:0,t:'火薬式スモークガン入りボール：航空不可'}],
+ sf:'火薬なし・圧縮ガスなしのスポーツ用品は航空・陸送とも可',
+ d:[{l:'スポーツ用品',en:'Sports equipment (ball, racket, glove). No gas, no battery, no hazardous materials.',ja:'スポーツ用品（ボール・ラケット・グローブ）。ガスなし・電池なし・危険物なし。',hl:false,pv:''}]},
+];
+
+// タグ
+const TAGS=['香水','整髪料','化粧水','化粧品','アイメイク','シャンプー','アルコール','接着剤','マウスウォッシュ','ハンドクリーム','スプレー','リチウム電池','乾電池','ニッケル水素','モバイルバッテリー','カメラ','スマホ','パソコン','ランタン','ダイビング','ゲーム機','アイロン','ヘアアイロン','ドローン','体温計','カイロ','テント','食品','医薬品','マニキュア','たばこ','ライター','ガス缶','花火','農薬','灯油'];
+
+const tg=document.getElementById('tg');
+TAGS.forEach(t=>{const b=document.createElement('button');b.className='tb';b.textContent=t;b.onclick=()=>quickSearch(t);tg.appendChild(b);});
+
+function findItem(q){
+  const s=q.toLowerCase().replace(/[\s　]/g,'');
+  let f=DB.find(i=>i.k.some(k=>s===k.toLowerCase().replace(/\s/g,'')));
+  if(!f)f=DB.find(i=>i.k.some(k=>s.includes(k.toLowerCase().replace(/\s/g,''))||k.toLowerCase().replace(/\s/g,'').includes(s)));
+  return f;
+}
+
+let ac=null;
+function ga(){if(!ac)ac=new(window.AudioContext||window.webkitAudioContext)();return ac;}
+function pOpen(){try{const c=ga();[523,659,784,1047].forEach((f,i)=>{const o=c.createOscillator(),g=c.createGain();o.connect(g);g.connect(c.destination);o.frequency.value=f;o.type='square';g.gain.setValueAtTime(.06,c.currentTime+i*.1);g.gain.exponentialRampToValueAtTime(.001,c.currentTime+i*.1+.15);o.start(c.currentTime+i*.1);o.stop(c.currentTime+i*.1+.15);});}catch(e){}}
+function pOK(){try{const c=ga();[660,880].forEach((f,i)=>{const o=c.createOscillator(),g=c.createGain();o.connect(g);g.connect(c.destination);o.frequency.value=f;o.type='square';g.gain.setValueAtTime(.05,c.currentTime+i*.1);g.gain.exponentialRampToValueAtTime(.001,c.currentTime+i*.1+.12);o.start(c.currentTime+i*.1);o.stop(c.currentTime+i*.1+.12);});}catch(e){}}
+function pNG(){try{const c=ga();[220,180].forEach((f,i)=>{const o=c.createOscillator(),g=c.createGain();o.connect(g);g.connect(c.destination);o.frequency.value=f;o.type='sawtooth';g.gain.setValueAtTime(.05,c.currentTime+i*.12);g.gain.exponentialRampToValueAtTime(.001,c.currentTime+i*.12+.2);o.start(c.currentTime+i*.12);o.stop(c.currentTime+i*.12+.2);});}catch(e){}}
+function pCond(){try{const c=ga();const o=c.createOscillator(),g=c.createGain();o.connect(g);g.connect(c.destination);o.frequency.setValueAtTime(660,c.currentTime);o.frequency.setValueAtTime(550,c.currentTime+.1);o.type='square';g.gain.setValueAtTime(.05,c.currentTime);g.gain.exponentialRampToValueAtTime(.001,c.currentTime+.25);o.start(c.currentTime);o.stop(c.currentTime+.25);}catch(e){}}
+function pLand(){try{const c=ga();[440,550,660].forEach((f,i)=>{const o=c.createOscillator(),g=c.createGain();o.connect(g);g.connect(c.destination);o.frequency.value=f;o.type='square';g.gain.setValueAtTime(.04,c.currentTime+i*.08);g.gain.exponentialRampToValueAtTime(.001,c.currentTime+i*.08+.1);o.start(c.currentTime+i*.08);o.stop(c.currentTime+i*.08+.1);});}catch(e){}}
+
+function startApp(){pOpen();document.getElementById('op').style.display='none';document.getElementById('main').style.display='flex';}
+function doSearch(){const q=document.getElementById('query').value.trim();if(!q)return;const item=findItem(q);if(item){const a=item.air,l=item.land;if(a==='ok'&&l==='ok')pOK();else if(a==='ng'&&l==='ng')pNG();else if(a==='ng'&&l==='ok')pLand();else pCond();}else pNG();render(item,q);}
+function quickSearch(w){document.getElementById('query').value=w;doSearch();}
+function copyText(text,btn){const done=()=>{const o=btn.textContent;btn.textContent='コピー済み ✓';btn.classList.add('copied');setTimeout(()=>{btn.textContent=o;btn.classList.remove('copied');},2000);};if(navigator.clipboard){navigator.clipboard.writeText(text).then(done).catch(()=>{fb();done();});}else{fb();done();}function fb(){const ta=document.createElement('textarea');ta.value=text;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);}}
+
+function verdictHtml(item){
+  const ai={ok:'◎',cond:'△',ng:'✗'},al={ok:'航空搭載可',cond:'条件付き可',ng:'航空搭載不可'},ac_={ok:'vair-ok',cond:'vair-c',ng:'vair-ng'};
+  const li={ok:'◎',cond:'△',ng:'✗',na:'—'},ll={ok:'陸送引受可',cond:'条件付き可',ng:'陸送も不可',na:'要確認'},lc={ok:'vland-ok',cond:'vland-c',ng:'vland-ng',na:'vland-na'};
+  return `<div class="verdict-row"><div class="verdict-box ${ac_[item.air]}"><div class="vt">✈ EMS・航空便</div><div class="vi">${ai[item.air]}</div><div class="vl">${al[item.air]}</div></div><div class="verdict-box ${lc[item.land]}"><div class="vt">🚚 ゆうパック陸送</div><div class="vi">${li[item.land]}</div><div class="vl">${ll[item.land]}</div></div></div>`;
+}
+function officialBtn(){return `<a href="https://www.post.japanpost.jp/question/dangerous_goods_search/" target="_blank" rel="noopener" class="official-btn">🏣 日本郵便 公式サイトで詳細確認 ↗</a><p class="official-note">品名を検索すると公式の判定結果・詳細条件を確認できます</p>`;}
+function cardClass(item){if(item.air==='ok')return 'ok';if(item.air==='cond')return 'cond';if(item.air==='ng'&&item.land==='ok')return 'land';return 'ng';}
+
+function render(item,query){
+  const ra=document.getElementById('ra');
+  if(!item){
+    ra.innerHTML=`<div class="W slide-in" style="overflow:hidden;"><div class="sh" style="background:rgba(255,170,0,.06);"><div class="sic" style="background:rgba(255,170,0,.12);border-color:var(--orange);color:var(--orange);">?</div><div class="sn">「${query}」</div><div class="badge" style="color:var(--orange);border-color:var(--orange);">要確認</div></div><div class="rb"><div class="smry">「${query}」はアプリ内にデータがありません。<br>日本郵便の公式サイトで直接ご確認ください。</div><div class="stitle">◆ 公式サイトで品名を検索</div>${officialBtn()}</div></div>`;
+    ra.scrollIntoView({behavior:'smooth',block:'start'});return;
+  }
+  const cc=cardClass(item);
+  const safeHtml=item.sf?`<div class="safe-box">✓ ${item.sf}</div>`:`<div class="ng-box">✗ この品目は航空便・陸送ともに引受不可です。</div>`;
+  const landNoteHtml=item.landNote?`<div class="land-note">🚚 ${item.landNote}</div>`:'';
+  const checks=item.c.map(c=>`<li><span class="ci" style="color:${c.o?'#44cc44':'#ff4444'}">${c.o?'◎':'×'}</span><span>${c.t}</span></li>`).join('');
+  const declsHtml=item.d.map(d=>`<div class="di"><div class="dtag"><span class="dlabel">${d.l}</span><button class="cpb" onclick="copyText('${d.en.replace(/'/g,"\\'")}',this)">コピー</button></div><div class="den${d.hl?' hl':''}">${d.en}</div><div class="dja">${d.ja}</div>${d.pv?`<div class="dpv">📌 ${d.pv}</div>`:''}</div>`).join('');
+  ra.innerHTML=`<div class="rc W ${cc} slide-in"><div class="sh"><div class="sic">${cc==='ok'?'◎':cc==='cond'?'!':cc==='land'?'🚚':'✗'}</div><div class="sn">${item.n}</div><div class="badge">${item.lb}</div></div><div class="rb"><div class="smry">${item.sm}</div><div class="stitle">◆ 航空便 ／ ゆうパック陸送 判定</div>${verdictHtml(item)}${landNoteHtml}<div class="stitle">◆ 搭載条件・注意事項</div><ul class="cl">${checks}</ul><div class="stitle">◆ 搭載可否の目安</div>${safeHtml}<div class="stitle">◆ 品名欄・申告書の記載例（英語）</div><div class="dl">${declsHtml}</div><div class="stitle">◆ 公式情報で最終確認</div>${officialBtn()}</div></div>`;
+  ra.scrollIntoView({behavior:'smooth',block:'start'});
+}
+document.getElementById('query').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();doSearch();}});
+</script>
+</body>
+</html>
